@@ -1,1 +1,1 @@
-## All your Computer assignments will be committed here in your various folders.
+## All your Computer Vision assignments will be committed here in your various folders.
