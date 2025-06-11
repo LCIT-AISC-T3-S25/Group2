@@ -1,76 +1,79 @@
 import streamlit as st
 import requests
 
-# --- Updated API URLs matching your docker port mappings ---
-GRU_API_URL = "http://localhost:5004/predict"   # GRU container on port 5004
-LSTM_API_URL = "http://localhost:5002/predict"  # LSTM container on port 5002
-CNN_API_URL = "http://localhost:5003/predict"   # CNN container on port 5003
+st.set_page_config(page_title="Model Prediction UI", layout="wide")
 
-st.title("Multi-Model Prediction UI")
+st.title("🔍 Multi-Model Prediction Interface")
 
-tabs = st.tabs(["GRU Model", "LSTM Model", "CNN Model"])
+# Define tabs for 4 models
+tabs = st.tabs(["GRU Sentiment", "LSTM Sentiment", "CNN Image", "VGG Transfer Learning"])
 
-# -------- GRU Model Tab --------
+# GRU Model - Port 5001
 with tabs[0]:
-    st.header("GRU Model Demo")
-    gru_input = st.text_area("Enter text for GRU model prediction")
-    if st.button("Run GRU Model", key="gru_btn"):
-        if gru_input.strip():
+    st.header("GRU Sentiment Analysis")
+    gru_text = st.text_area("Enter text to analyze (GRU):", key="gru_text_area")
+    if st.button("Predict using GRU", key="gru_button"):
+        if gru_text:
             try:
-                response = requests.post(GRU_API_URL, json={"text": gru_input})
-                if response.ok:
+                response = requests.post("http://localhost:8501/predict", json={"text": gru_text})
+                if response.status_code == 200:
                     result = response.json()
-                    st.success(f"Prediction: {result.get('prediction', 'No prediction in response')}")
-                    st.json(result)
+                    st.success(f"Prediction: {result['prediction']}")
+                    st.info(" Interpretability feature can be added here (e.g., attention weights)")
                 else:
-                    st.error(f"GRU Model API error: {response.status_code}")
+                    st.error("Model error. Check if GRU container is running properly.")
             except Exception as e:
-                st.error(f"Error calling GRU model API: {e}")
-                st.info("Make sure the GRU container is running and mapped to port 5004.")
-        else:
-            st.warning("Please enter some text")
+                st.error(f"Error connecting to GRU model: {e}")
 
-# -------- LSTM Model Tab --------
+# LSTM Model - Port 5002
 with tabs[1]:
-    st.header("LSTM Model Demo")
-    lstm_input = st.text_area("Enter text for LSTM model prediction")
-    if st.button("Run LSTM Model", key="lstm_btn"):
-        if lstm_input.strip():
+    st.header(" LSTM Sentiment Analysis")
+    lstm_text = st.text_area("Enter text to analyze (LSTM):", key="lstm_text_area")
+    if st.button("Predict using LSTM", key="lstm_button"):
+        if lstm_text:
             try:
-                response = requests.post(LSTM_API_URL, json={"text": lstm_input})
-                if response.ok:
+                response = requests.post("http://localhost:5002/predict", json={"text": lstm_text})
+                if response.status_code == 200:
                     result = response.json()
-                    st.success(f"Prediction: {result.get('prediction', 'No prediction in response')}")
-                    st.json(result)
+                    st.success(f"Prediction: {result['prediction']}")
+                    st.info("Interpretability feature can be added here (e.g., LIME)")
                 else:
-                    st.error(f"LSTM Model API error: {response.status_code}")
+                    st.error("Model error. Check if LSTM container is running properly.")
             except Exception as e:
-                st.error(f"Error calling LSTM model API: {e}")
-                st.info("Make sure the LSTM container is running and mapped to port 5002.")
-        else:
-            st.warning("Please enter some text")
+                st.error(f"Error connecting to LSTM model: {e}")
 
-# -------- CNN Model Tab --------
+# CNN Model - Port 8000
 with tabs[2]:
-    st.header("CNN Model Demo")
-    uploaded_file = st.file_uploader("Upload an image for CNN model prediction", type=["png", "jpg", "jpeg"])
-    
-    if uploaded_file:
-        st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
-
-    if st.button("Run CNN Model", key="cnn_btn"):
-        if uploaded_file is not None:
+    st.header("CNN Image Classification")
+    cnn_image = st.file_uploader("Upload an image (JPG/PNG):", type=["jpg", "jpeg", "png"], key="cnn_upload")
+    if st.button("Classify with CNN", key="cnn_button"):
+        if cnn_image:
             try:
-                files = {"file": (uploaded_file.name, uploaded_file.getvalue())}
-                response = requests.post(CNN_API_URL, files=files)
-                if response.ok:
+                files = {"file": cnn_image.getvalue()}
+                response = requests.post("http://localhost:8000/predict", files=files)
+                if response.status_code == 200:
                     result = response.json()
-                    st.success(f"Prediction: {result.get('prediction', 'No prediction in response')}")
-                    st.json(result)
+                    st.success(f"Prediction: {result['class']}")
+                    st.info("Grad-CAM or saliency maps can go here.")
                 else:
-                    st.error(f"CNN Model API error: {response.status_code}")
+                    st.error("CNN model error. Check if container is running.")
             except Exception as e:
-                st.error(f"Error calling CNN model API: {e}")
-                st.info("Make sure the CNN container is running and mapped to port 5003.")
-        else:
-            st.warning("Please upload an image file")
+                st.error(f"Error connecting to CNN model: {e}")
+
+# VGG + Metadata Model - Port 8001
+with tabs[3]:
+    st.header("VGG + Metadata Transfer Learning")
+    vgg_image = st.file_uploader("Upload image for classification (VGG):", type=["jpg", "jpeg", "png"], key="vgg_upload")
+    if st.button("Classify with VGG Transfer Learning", key="vgg_button"):
+        if vgg_image:
+            try:
+                files = {"file": vgg_image.getvalue()}
+                response = requests.post("http://localhost:8001/predict", files=files)
+                if response.status_code == 200:
+                    result = response.json()
+                    st.success(f"Prediction: {result['class']}")
+                    st.info("Explanation of VGG + Metadata combination can go here.")
+                else:
+                    st.error("VGG model error. Check if container is running.")
+            except Exception as e:
+                st.error(f"Error connecting to VGG model: {e}")
