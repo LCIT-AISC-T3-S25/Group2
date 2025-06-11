@@ -14,8 +14,7 @@ word_lenth=10
 
 model = load_model("BiGRU_model.h5")
 vocab_size = config["model"]["vocab_size"]
-#maxlen = config["model"]["maxlen"]
-maxlen= >200
+maxlen = config["model"]["maxlen"]
 port = config["server"]["port"]
 
 @app.route("/predict", methods=["POST"])
