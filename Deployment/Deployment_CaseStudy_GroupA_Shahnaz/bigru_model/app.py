@@ -16,6 +16,13 @@ model = load_model("BiGRU_model.h5")
 vocab_size = config["model"]["vocab_size"]
 maxlen = config["model"]["maxlen"]
 port = config["server"]["port"]
+def predict():
+    data = request.get_json()
+    sequences = data.get("sequences")  # list of tokenized sequences
+    sequences = pad_sequences(sequences, maxlen=maxlen)
+    preds = model.predict(sequences)
+    return jsonify({"predictions": preds.tolist()})
+    print("test_print")
 
 @app.route("/predict", methods=["POST"])
 def predict():
