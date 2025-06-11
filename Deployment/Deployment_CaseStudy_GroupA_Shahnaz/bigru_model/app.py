@@ -22,7 +22,6 @@ def predict():
     sequences = pad_sequences(sequences, maxlen=maxlen)
     preds = model.predict(sequences)
     return jsonify({"predictions": preds.tolist()})
-    print("test_print")
 
 @app.route("/predict", methods=["POST"])
 def predict():
