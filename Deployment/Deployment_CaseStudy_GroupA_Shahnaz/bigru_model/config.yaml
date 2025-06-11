@@ -4,7 +4,3 @@ model:
 
 server:
   port: 5003  # Example port for BiGRU
-username:
-  shahnaz
-password:
-  test@123
