@@ -9,9 +9,12 @@ with open("config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
 app = Flask(__name__)
+word_lenth=10
+
 model = load_model("BiGRU_model.h5")
 vocab_size = config["model"]["vocab_size"]
-maxlen = config["model"]["maxlen"]
+#maxlen = config["model"]["maxlen"]
+maxlen= >200
 port = config["server"]["port"]
 
 @app.route("/predict", methods=["POST"])
