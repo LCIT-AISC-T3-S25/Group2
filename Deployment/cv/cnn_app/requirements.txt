@@ -1,0 +1,13 @@
+tensorflow
+scikit-learn
+numpy
+matplotlib
+seaborn
+pandas
+opencv-python
+tqdm
+Pillow
+joblib
+fastapi
+uvicorn
+python-multipart
