@@ -1,0 +1,6 @@
+model:
+  vocab_size: 10000
+  maxlen: 200
+
+server:
+  port: 5003  # Example port for BiGRU
