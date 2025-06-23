@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, request, jsonify
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -23,6 +24,13 @@ try:
 except Exception as e:
     raise RuntimeError("Failed to load tokenizer: " + str(e))
 
+# Load label encoder
+try:
+    with open("label_encoder.pkl", "rb") as f:
+        labelencoder = pickle.load(f)
+except Exception as e:
+    raise RuntimeError("Failed to load label encoder: " + str(e))
+
 # Load model
 try:
     model = load_model("BiGRU_model.h5", compile=False)
@@ -33,9 +41,6 @@ except Exception as e:
 max_len = config["model"].get("maxlen", 50)
 trunc_type = config["model"].get("trunc_type", "post")
 port = config["server"].get("port", 5000)
-
-# Define hardcoded label classes (in the same order the model was trained on)
-label_classes = ['Negative', 'Neutral', 'Positive']
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -60,12 +65,12 @@ def predict():
         text = data["text"]
         padded_input = preprocess_text(text)
         y_prob = model.predict(padded_input)[0]
-        y_index = int(np.argmax(y_prob))
-        predicted_label = label_classes[y_index]
+        y_index = np.argmax(y_prob)
+        predicted_label = labelencoder.inverse_transform([y_index])[0]
 
         confidence_scores = {
-            label: float(score)
-            for label, score in zip(label_classes, y_prob)
+            label: float(y_prob[labelencoder.transform([label])[0]])
+            for label in labelencoder.classes_
         }
 
         return jsonify({
