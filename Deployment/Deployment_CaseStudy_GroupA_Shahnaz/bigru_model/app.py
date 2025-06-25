@@ -6,41 +6,35 @@ import pickle
 import numpy as np
 import yaml
 import logging
+from flask import Flask, request, jsonify
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+import pickle
+import numpy as np
+import yaml
+import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
 # Load config
-try:
-    with open("config.yaml", "r") as f:
-        config = yaml.safe_load(f)
-except FileNotFoundError:
-    raise FileNotFoundError("Configuration file 'config.yaml' not found.")
+with open("config.yaml", "r") as f:
+    config = yaml.safe_load(f)
 
 # Load tokenizer
-try:
-    with open("tokenizer_biGRU.pkl", "rb") as f:
-        tokenizer = pickle.load(f)
-except Exception as e:
-    raise RuntimeError("Failed to load tokenizer: " + str(e))
-
-# Load label encoder
-try:
-    with open("label_encoder.pkl", "rb") as f:
-        labelencoder = pickle.load(f)
-except Exception as e:
-    raise RuntimeError("Failed to load label encoder: " + str(e))
+with open("tokenizer_biGRU.pkl", "rb") as f:
+    tokenizer = pickle.load(f)
 
 # Load model
-try:
-    model = load_model("BiGRU_model.h5", compile=False)
-except Exception as e:
-    raise RuntimeError("Failed to load model: " + str(e))
+model = load_model("BiGRU_model.h5", compile=False)
 
 # Read values from config
 max_len = config["model"].get("maxlen", 50)
 trunc_type = config["model"].get("trunc_type", "post")
 port = config["server"].get("port", 5000)
+
+# Hardcoded class labels
+label_classes = ['Negative', 'Neutral', 'Positive']
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -51,31 +45,26 @@ def home():
 
 def preprocess_text(text):
     sequence = tokenizer.texts_to_sequences([text])
-    padded = pad_sequences(sequence, maxlen=max_len, truncating=trunc_type)
-    return padded
+    return pad_sequences(sequence, maxlen=max_len, truncating=trunc_type)
 
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
-        data = request.get_json()
+        text = request.get_json(force=True).get("text")
+        if not text:
+            return jsonify({"error": "Missing 'text' key in request JSON"}), 400
 
-        if not data or "text" not in data:
-            return jsonify({"error": "Missing 'text' key in JSON body"}), 400
-
-        text = data["text"]
         padded_input = preprocess_text(text)
         y_prob = model.predict(padded_input)[0]
-        y_index = np.argmax(y_prob)
-        predicted_label = labelencoder.inverse_transform([y_index])[0]
-
-        confidence_scores = {
-            label: float(y_prob[labelencoder.transform([label])[0]])
-            for label in labelencoder.classes_
-        }
+        y_index = int(np.argmax(y_prob))
+        predicted_label = label_classes[y_index]
 
         return jsonify({
             "sentiment": predicted_label,
-            "confidence_scores": confidence_scores
+            "confidence_scores": {
+                label: float(score)
+                for label, score in zip(label_classes, y_prob)
+            }
         })
 
     except Exception as e:
