@@ -1,0 +1,5 @@
+app:
+  host: 0.0.0.0         # Access from any device
+  internal_port: 5000   # Port app runs on/should be expose
+  host_port: 5001     # Used externally (in Docker run, not here)
+  max_len: 51           # Used for padding/truncation
