@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  wgan-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./wgan_final_model.pth:/app/wgan_final_model.pth
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
