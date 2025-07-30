@@ -4,23 +4,32 @@ import json
 import pytest
 from pathlib import Path
 
-# Get the root directory of the project
-ROOT_DIR = Path(__file__).parent.parent if "tests" in str(Path(__file__)) else Path(__file__).parent
+# --- Critical Path Fixes ---
+# 1. Get the absolute path to the sentiment_app directory
+APP_DIR = Path(__file__).parent
 
-# Add root directory to Python path
-sys.path.insert(0, str(ROOT_DIR))
+# 2. Set the working directory to ensure app.py finds config.yaml
+os.chdir(APP_DIR)
 
-# Set the working directory to the root directory
-os.chdir(ROOT_DIR)
+# 3. Verify critical files exist (debugging)
+print(f"\n[DEBUG] Current directory: {os.getcwd()}")
+print(f"[DEBUG] Files here: {os.listdir(APP_DIR)}\n")
 
-# Now import the app after setting paths
+# 4. Import app AFTER setting paths
 from app import app
 
+# --- Test Setup ---
 client = app.test_client()
 
+# --- Test Cases ---
 def test_valid_prediction():
+    """Test valid sentiment prediction"""
     payload = {"text": "I love sunny mornings in the park! 🌞🌳 #happy"}
-    response = client.post("/predict", data=json.dumps(payload), content_type="application/json")
+    response = client.post(
+        "/predict",
+        data=json.dumps(payload),
+        content_type="application/json"
+    )
     assert response.status_code == 200
     data = response.get_json()
     assert "prediction" in data
@@ -28,24 +37,44 @@ def test_valid_prediction():
     assert "top_contributing_words" in data
 
 def test_garbage_input():
+    """Test garbage input detection"""
     payload = {"text": "jfjfjf1234@#🤖"}
-    response = client.post("/predict", data=json.dumps(payload), content_type="application/json")
+    response = client.post(
+        "/predict",
+        data=json.dumps(payload),
+        content_type="application/json"
+    )
     assert response.status_code == 200
     data = response.get_json()
     assert data["prediction"] == "Garbage"
     assert data["confidence"] == 0.0
 
 def test_empty_text():
+    """Test empty input handling"""
     payload = {"text": ""}
-    response = client.post("/predict", data=json.dumps(payload), content_type="application/json")
+    response = client.post(
+        "/predict",
+        data=json.dumps(payload),
+        content_type="application/json"
+    )
     assert response.status_code == 400
 
 def test_missing_text_field():
+    """Test missing required field"""
     payload = {"message": "This will fail"}
-    response = client.post("/predict", data=json.dumps(payload), content_type="application/json")
+    response = client.post(
+        "/predict",
+        data=json.dumps(payload),
+        content_type="application/json"
+    )
     assert response.status_code == 400
 
 def test_short_text():
+    """Test short text rejection"""
     payload = {"text": "ok"}
-    response = client.post("/predict", data=json.dumps(payload), content_type="application/json")
+    response = client.post(
+        "/predict",
+        data=json.dumps(payload),
+        content_type="application/json"
+    )
     assert response.status_code == 400
