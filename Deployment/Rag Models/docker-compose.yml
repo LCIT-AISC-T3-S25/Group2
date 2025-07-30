@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  rag-chatbot:
+    image: sauravrisal42/rag-chatbot:latest
+    container_name: rag-chatbot-container
+    ports:
+      - "8004:8004"
+    restart: unless-stopped
