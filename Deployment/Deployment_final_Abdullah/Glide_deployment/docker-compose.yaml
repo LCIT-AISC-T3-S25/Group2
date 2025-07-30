@@ -1,0 +1,15 @@
+services:
+  glide-api:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./glide_like_model_final.pt:/app/glide_like_model_final.pt
+    environment:
+      - FLASK_ENV=production
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    restart: unless-stopped
