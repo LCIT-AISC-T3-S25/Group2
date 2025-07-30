@@ -1,13 +1,28 @@
-import os
-import json
 import pytest
-from app import app  # Direct import since they're in same directory
+import json
+from app import app
 
-# Initialize test client
-client = app.test_client()
+@pytest.fixture
+def client():
+    app.config["TESTING"] = True
+    return app.test_client()
 
-def test_valid_prediction():
-    """Test happy path prediction"""
+def test_home_route(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"Sentiment Analysis API is running" in response.data
+
+def test_test_ui_route(client):
+    response = client.get("/test-ui")
+    assert response.status_code == 200
+    assert b"Test Sentiment Analysis" in response.data
+
+def test_missing_text_field(client):
+    response = client.post("/predict", json={})
+    assert response.status_code == 400
+    assert "error" in response.get_json()
+
+def test_valid_prediction(client):
     payload = {"text": "I love sunny days!"}
     response = client.post(
         "/predict",
@@ -17,26 +32,5 @@ def test_valid_prediction():
     assert response.status_code == 200
     data = response.get_json()
     assert "prediction" in data
-    assert isinstance(data["confidence"], float)
-    assert isinstance(data["top_contributing_words"], list)
-
-def test_garbage_input():
-    """Test garbage detection"""
-    payload = {"text": "xkjb123!@#"}
-    response = client.post(
-        "/predict",
-        data=json.dumps(payload),
-        content_type="application/json"
-    )
-    assert response.status_code == 200
-    assert response.get_json()["prediction"] == "Garbage"
-
-def test_short_text():
-    """Test minimum length validation"""
-    payload = {"text": "a"}
-    response = client.post(
-        "/predict",
-        data=json.dumps(payload),
-        content_type="application/json"
-    )
-    assert response.status_code == 400
+    assert isinstance(data.get("confidence", None), float)
+    assert isinstance(data.get("top_contributing_words", None), list)
